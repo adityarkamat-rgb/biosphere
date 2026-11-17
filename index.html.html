@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BioSphere OS — Isometric Greenhouse Digital Twin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            forest: {
+              950: '#070d0b',
+              900: '#0b1311',
+              850: '#101c18',
+              800: '#162722',
+              700: '#213a32',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom botanical glassmorphism & SVG animations */
+    body {
+      background-color: #0b1311;
+      color: #e2ede9;
+      overflow-x: hidden;
+    }
+
+    .glass-card {
+      background: rgba(16, 28, 24, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(52, 211, 153, 0.14);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+    }
+
+    .glass-card-subtle {
+      background: rgba(11, 19, 17, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Custom Range Sliders */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      height: 6px;
+      border-radius: 999px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #10b981;
+      cursor: pointer;
+      border: 2px solid #0b1311;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+      transition: transform 0.15s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    input[type="range"].slider-cyan::-webkit-slider-thumb {
+      background: #06b6d4;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+    }
+    input[type="range"].slider-amber::-webkit-slider-thumb {
+      background: #f59e0b;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    }
+    input[type="range"].slider-magenta::-webkit-slider-thumb {
+      background: #d946ef;
+      box-shadow: 0 0 10px rgba(217, 70, 239, 0.6);
+    }
+
+    /* Isometric SVG Animations */
+    @keyframes spinFan {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .fan-blades-active {
+      transform-origin: center;
+      transform-box: fill-box;
+      animation: spinFan 0.45s linear infinite;
+    }
+
+    .fan-blades-idle {
+      transform-origin: center;
+      transform-box: fill-box;
+      transition: transform 0.6s ease-out;
+    }
+
+    @keyframes waterDrop {
+      0% {
+        transform: translateY(0) scale(0.8);
+        opacity: 0;
+      }
+      20% {
+        opacity: 0.95;
+      }
+      85% {
+        opacity: 0.85;
+      }
+      100% {
+        transform: translateY(68px) scale(1.1);
+        opacity: 0;
+      }
+    }
+
+    .water-droplet {
+      animation: waterDrop 0.85s ease-in infinite;
+    }
+
+    @keyframes windFlow {
+      0% {
+        stroke-dashoffset: 48;
+        opacity: 0;
+      }
+      30% {
+        opacity: 0.75;
+      }
+      100% {
+        stroke-dashoffset: 0;
+        opacity: 0;
+      }
+    }
+
+    .airflow-line {
+      stroke-dasharray: 12 12;
+      animation: windFlow 1.1s linear infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.72; }
+      50% { opacity: 0.92; }
+    }
+
+    .grow-cone-active {
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes mistFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .condensation-group {
+      animation: mistFloat 4s ease-in-out infinite;
+      transition: opacity 0.8s ease;
+    }
+
+    .plant-leaf {
+      transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.8s ease;
+    }
+
+    .interactive-hotspot {
+      cursor: pointer;
+      transition: filter 0.2s ease, transform 0.2s ease;
+    }
+    .interactive-hotspot:hover {
+      filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.65));
+    }
+
+    /* Custom Scrollbar for Serial Console */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(11, 19, 17, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(52, 211, 153, 0.25);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- Toast Notification Container (Replaces alert()) -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
+
+  <!-- Top Header Bar -->
+  <header class="sticky top-0 z-30 glass-card border-b border-emerald-500/20 px-4 py-3 sm:px-6">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Status Badge -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-400/30 flex items-center justify-center shadow-inner">
+          <svg class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 22V12m0 0C12 7 7 4 3 4c0 5 3 8 9 8zm0 0c0-5 5-8 9-8 0 5-3 8-9 8z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">BioSphere <span class="text-emerald-400">OS</span></h1>
+            <span id="connection-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <span id="connection-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+              <span id="connection-text">SIMULATION MODE</span>
+            </span>
+          </div>
+          <p class="text-xs text-emerald-200/60 hidden sm:block">ESP32 BLE Mobile Gateway & Living Digital Twin</p>
+        </div>
+      </div>
+
+      <!-- Controls: Profile Selector, Sim Toggle, Connect BLE -->
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+        
+        <!-- Plant Profile Selector -->
+        <div class="flex items-center gap-2 bg-forest-950/80 border border-emerald-500/20 rounded-xl px-3 py-1.5">
+          <label for="plant-profile" class="text-xs text-emerald-300/80 font-medium hidden md:inline">Profile:</label>
+          <select id="plant-profile" class="bg-transparent text-xs sm:text-sm font-medium text-white focus:outline-none cursor-pointer">
+            <option value="custom" class="bg-forest-900 text-white">Custom Rules</option>
+            <option value="fern" class="bg-forest-900 text-white" selected>Tropical Fern</option>
+            <option value="tomato" class="bg-forest-900 text-white">Cherry Tomatoes</option>
+            <option value="succulent" class="bg-forest-900 text-white">Desert Succulent</option>
+          </select>
+        </div>
+
+        <!-- Simulation Mode Toggle -->
+        <button id="btn-toggle-sim" type="button" class="px-3 py-2 rounded-xl text-xs font-medium bg-forest-800 hover:bg-forest-700 text-emerald-200 border border-emerald-500/25 transition flex items-center gap-1.5" title="Toggle interactive simulation sandbox">
+          <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          <span id="sim-btn-label">Sim Active</span>
+        </button>
+
+        <!-- Connect ESP32 Web Bluetooth Button -->
+        <button id="btn-ble-connect" type="button" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-forest-950 shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 7l10 10-5 5V2l5 5L7 17" />
+          </svg>
+          <span id="ble-btn-text">Connect ESP32 (BLE)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace Grid -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT / CENTER VIEWPORT: Interactive Isometric Digital Twin (7 Columns on Desktop) -->
+    <section class="lg:col-span-7 flex flex-col gap-5">
+      
+      <!-- Isometric Greenhouse Card -->
+      <div class="glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden flex flex-col justify-between min-h-[430px] sm:min-h-[500px]">
+        
+        <!-- Top Overlay HUD inside Viewport -->
+        <div class="flex flex-wrap items-center justify-between gap-2 z-10">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-forest-950/80 border border-white/10 text-xs font-mono text-emerald-300">
+              CHAMBER // 01
+            </span>
+            <span id="vpd-badge" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs font-mono text-emerald-300">
+              VPD: 0.95 kPa (Optimal)
+            </span>
+          </div>
+          <p class="text-xs text-emerald-200/60 bg-forest-950/60 px-2.5 py-1 rounded-lg border border-white/5">
+            Tap Grow Light, Fan, or Pump inside chamber to override
+          </p>
+        </div>
+
+        <!-- SVG Isometric 2.5D Greenhouse Scene -->
+        <div class="relative flex-1 flex items-center justify-center my-2 select-none">
+          <svg id="greenhouse-svg" viewBox="0 0 640 460" class="w-full h-auto max-h-[430px] drop-shadow-2xl">
+            <defs>
+              <!-- Ambient Radial Glow -->
+              <radialGradient id="floorGlow" cx="50%" cy="55%" r="50%">
+                <stop offset="0%" stop-color="#10b981" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#0b1311" stop-opacity="0"/>
+              </radialGradient>
+
+              <!-- Grow Light Magenta-Warm Beam Gradient -->
+              <linearGradient id="growBeamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#e879f9" stop-opacity="0.65"/>
+                <stop offset="45%" stop-color="#c084fc" stop-opacity="0.28"/>
+                <stop offset="100%" stop-color="#f472b6" stop-opacity="0.0"/>
+              </linearGradient>
+
+              <!-- Sunlight Diagonal Beam Gradient -->
+              <linearGradient id="sunBeamGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fde68a" stop-opacity="0.32"/>
+                <stop offset="100%" stop-color="#fde68a" stop-opacity="0.0"/>
+              </linearGradient>
+
+              <!-- Glass Panel Gradient -->
+              <linearGradient id="glassPane" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#a7f3d0" stop-opacity="0.14"/>
+                <stop offset="50%" stop-color="#34d399" stop-opacity="0.05"/>
+                <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.12"/>
+              </linearGradient>
+
+              <!-- Isometric Base Pedestal Gradient -->
+              <linearGradient id="baseLeftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#182b25"/>
+                <stop offset="100%" stop-color="#0f1c18"/>
+              </linearGradient>
+              <linearGradient id="baseRightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#12211c"/>
+                <stop offset="100%" stop-color="#0a1411"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Soft Ground Shadow / Glow -->
+            <ellipse cx="320" cy="375" rx="235" ry="68" fill="url(#floorGlow)" />
+
+            <!-- ==================== ISOMETRIC BASE PLATFORM ==================== -->
+            <!-- Top Floor Diamond -->
+            <polygon points="320,245 520,335 320,425 120,335" fill="#13241e" stroke="#2a4a3f" stroke-width="2"/>
+            <!-- Left Extrusion Wall -->
+            <polygon points="120,335 320,425 320,445 120,355" fill="url(#baseLeftGrad)" stroke="#1f3830" stroke-width="1.5"/>
+            <!-- Right Extrusion Wall -->
+            <polygon points="520,335 320,425 320,445 520,355" fill="url(#baseRightGrad)" stroke="#1f3830" stroke-width="1.5"/>
+
+            <!-- ==================== BACK GLASS WALLS ==================== -->
+            <!-- Back-Left Wall -->
+            <polygon points="130,330 130,165 320,85 320,245" fill="url(#glassPane)" stroke="#34d399" stroke-opacity="0.28" stroke-width="1.5"/>
+            <!-- Back-Right Wall -->
+            <polygon points="510,330 510,165 320,85 320,245" fill="url(#glassPane)" stroke="#34d399" stroke-opacity="0.28" stroke-width="1.5"/>
+
+            <!-- Natural Sunlight Shafts (Opacity scales with Light Sensor %) -->
+            <g id="sunlight-rays" opacity="0.55" pointer-events="none">
+              <polygon points="160,145 290,95 430,310 250,360" fill="url(#sunBeamGrad)"/>
+              <polygon points="230,115 340,85 480,295 330,350" fill="url(#sunBeamGrad)"/>
+            </g>
+
+            <!-- ==================== EXHAUST FAN (Back-Left Wall - Interactive) ==================== -->
+            <g id="iso-fan-hotspot" class="interactive-hotspot" onclick="toggleManualActuator('fan')">
+              <title>Click to toggle Exhaust Fan</title>
+              <!-- Fan Housing Frame (Skewed to match back-left isometric wall) -->
+              <g transform="translate(195, 195) skewY(-23)">
+                <rect x="-28" y="-28" width="56" height="56" rx="10" fill="#162722" stroke="#34d399" stroke-width="2" stroke-opacity="0.55"/>
+                <circle cx="0" cy="0" r="22" fill="#0b1311" stroke="#475569" stroke-width="2"/>
+                <!-- Spinning Blades -->
+                <g id="fan-blades-group" class="fan-blades-idle">
+                  <path d="M0,-3 C6,-16 14,-14 10,-2 Z" fill="#94a3b8"/>
+                  <path d="M3,0 C16,6 14,14 2,10 Z" fill="#94a3b8"/>
+                  <path d="M0,3 C-6,16 -14,14 -10,2 Z" fill="#94a3b8"/>
+                  <path d="M-3,0 C-16,-6 -14,-14 -2,-10 Z" fill="#94a3b8"/>
+                  <circle cx="0" cy="0" r="4.5" fill="#10b981"/>
+                </g>
+                <!-- Protective Grille Ring -->
+                <circle cx="0" cy="0" r="14" fill="none" stroke="#64748b" stroke-width="0.8" stroke-dasharray="3 2"/>
+              </g>
+              <!-- Animated Airflow Streamlines (Visible when Fan ON) -->
+              <g id="fan-airflow" opacity="0" pointer-events="none">
+                <path d="M225,185 Q265,195 295,215" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" class="airflow-line"/>
+                <path d="M222,202 Q260,215 288,235" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" class="airflow-line" style="animation-delay: 0.35s"/>
+                <path d="M228,170 Q270,178 302,195" fill="none" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round" class="airflow-line" style="animation-delay: 0.65s"/>
+              </g>
+            </g>
+
+            <!-- ==================== RAISED SOIL PLANTER BED ==================== -->
+            <g id="planter-bed">
+              <!-- Planter Box Left Face -->
+              <polygon points="215,315 320,362 320,392 215,345" fill="#292524" stroke="#44403c" stroke-width="1.5"/>
+              <!-- Planter Box Right Face -->
+              <polygon points="425,315 320,362 320,392 425,345" fill="#1c1917" stroke="#44403c" stroke-width="1.5"/>
+              <!-- Soil Top Diamond (Color dynamically updates based on moisture) -->
+              <polygon id="soil-surface" points="320,268 425,315 320,362 215,315" fill="#5c4033" stroke="#785544" stroke-width="1.5" style="transition: fill 0.8s ease;"/>
+              
+              <!-- Dry Soil Cracks Overlay (Visible when moisture < 35%) -->
+              <g id="soil-cracks" opacity="0" stroke="#9c7a65" stroke-width="1.3" fill="none" stroke-linecap="round" style="transition: opacity 0.8s ease;">
+                <polyline points="275,310 295,318 288,332"/>
+                <polyline points="295,318 312,312"/>
+                <polyline points="340,295 355,308 375,305"/>
+                <polyline points="355,308 348,325 362,334"/>
+                <polyline points="305,336 324,344 338,336"/>
+              </g>
+
+              <!-- Moist Soil Sheen/Puddles (Visible when moisture > 65%) -->
+              <g id="soil-moisture-sheen" opacity="0.4" fill="#06b6d4" style="transition: opacity 0.8s ease;">
+                <ellipse cx="285" cy="316" rx="14" ry="6" fill-opacity="0.22"/>
+                <ellipse cx="352" cy="318" rx="16" ry="7" fill-opacity="0.22"/>
+                <ellipse cx="320" cy="336" rx="12" ry="5" fill-opacity="0.25"/>
+              </g>
+            </g>
+
+            <!-- ==================== CENTERPIECE BOTANICAL PLANT ==================== -->
+            <g id="hero-plant" transform="translate(320, 312)">
+              <!-- Main Stem -->
+              <path d="M0,4 C-2,-22 2,-45 0,-72" stroke="#15803d" stroke-width="5" stroke-linecap="round" fill="none"/>
+              
+              <!-- Left Lower Leaf -->
+              <g id="leaf-left-low" class="plant-leaf">
+                <path d="M-2,-18 C-34,-34 -62,-22 -72,-4 C-48,-2 -22,-6 -2,-18 Z" fill="#10b981"/>
+                <path d="M-2,-18 C-32,-24 -52,-15 -68,-5" stroke="#047857" stroke-width="1.5" fill="none"/>
+              </g>
+
+              <!-- Right Lower Leaf -->
+              <g id="leaf-right-low" class="plant-leaf">
+                <path d="M2,-22 C34,-38 62,-26 72,-8 C48,-6 22,-10 2,-22 Z" fill="#059669"/>
+                <path d="M2,-22 C32,-28 52,-19 68,-9" stroke="#065f46" stroke-width="1.5" fill="none"/>
+              </g>
+
+              <!-- Left Upper Leaf -->
+              <g id="leaf-left-high" class="plant-leaf">
+                <path d="M-1,-44 C-28,-68 -56,-62 -64,-42 C-40,-38 -18,-36 -1,-44 Z" fill="#34d399"/>
+                <path d="M-1,-44 C-25,-56 -44,-52 -60,-43" stroke="#059669" stroke-width="1.5" fill="none"/>
+              </g>
+
+              <!-- Right Upper Leaf -->
+              <g id="leaf-right-high" class="plant-leaf">
+                <path d="M1,-48 C28,-72 56,-66 64,-46 C40,-42 18,-40 1,-48 Z" fill="#10b981"/>
+                <path d="M1,-48 C25,-60 44,-56 60,-47" stroke="#047857" stroke-width="1.5" fill="none"/>
+              </g>
+
+              <!-- Center Crown Sprout -->
+              <g id="leaf-crown" class="plant-leaf">
+                <path d="M0,-68 C-14,-95 -6,-116 0,-122 C6,-116 14,-95 0,-68 Z" fill="#6ee7b7"/>
+              </g>
+            </g>
+
+            <!-- ==================== WATER PUMP & DRIPPER RIG (Right Side - Interactive) ==================== -->
+            <g id="iso-pump-hotspot" class="interactive-hotspot" onclick="toggleManualActuator('pump')">
+              <title>Click to toggle Water Pump</title>
+              <!-- Water Reservoir Tank & Pump Unit on Floor -->
+              <g transform="translate(445, 295)">
+                <!-- Tank Body -->
+                <rect x="-18" y="-26" width="36" height="42" rx="6" fill="#0e7490" fill-opacity="0.45" stroke="#22d3ee" stroke-width="1.5"/>
+                <!-- Water Level inside Tank -->
+                <rect x="-15" y="-12" width="30" height="25" rx="4" fill="#06b6d4" fill-opacity="0.65"/>
+                <!-- Pump Motor Cap -->
+                <rect x="-12" y="-34" width="24" height="10" rx="3" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+                <circle id="pump-status-led" cx="0" cy="-29" r="2.5" fill="#475569"/>
+              </g>
+
+              <!-- Irrigation Pipe Leading Over Planter -->
+              <path d="M445,261 L445,212 L345,172 L305,190" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.75"/>
+              <!-- Sprinkler Nozzles -->
+              <circle cx="345" cy="172" r="4" fill="#0284c7" stroke="#bae6fd" stroke-width="1"/>
+              <circle cx="305" cy="190" r="4" fill="#0284c7" stroke="#bae6fd" stroke-width="1"/>
+
+              <!-- Animated Falling Water Droplets (Visible when Pump ON) -->
+              <g id="water-spray-group" opacity="0" pointer-events="none">
+                <circle cx="342" cy="182" r="3" fill="#38bdf8" class="water-droplet" style="animation-delay: 0s"/>
+                <circle cx="350" cy="185" r="2.5" fill="#7dd3fc" class="water-droplet" style="animation-delay: 0.25s"/>
+                <circle cx="336" cy="188" r="2.8" fill="#06b6d4" class="water-droplet" style="animation-delay: 0.5s"/>
+                <circle cx="304" cy="200" r="3" fill="#38bdf8" class="water-droplet" style="animation-delay: 0.15s"/>
+                <circle cx="312" cy="204" r="2.5" fill="#7dd3fc" class="water-droplet" style="animation-delay: 0.4s"/>
+                <circle cx="298" cy="202" r="2.8" fill="#06b6d4" class="water-droplet" style="animation-delay: 0.65s"/>
+              </g>
+            </g>
+
+            <!-- ==================== OVERHEAD LED GROW LIGHT BAR (Top Roof - Interactive) ==================== -->
+            <g id="iso-light-hotspot" class="interactive-hotspot" onclick="toggleManualActuator('light')">
+              <title>Click to toggle LED Grow Light</title>
+              <!-- Light Cone Beam (Visible when Grow Light ON) -->
+              <polygon id="grow-light-cone" points="255,132 385,132 435,315 205,315" fill="url(#growBeamGrad)" opacity="0" pointer-events="none" style="transition: opacity 0.5s ease;"/>
+              
+              <!-- Suspension Cables -->
+              <line x1="270" y1="106" x2="270" y2="126" stroke="#94a3b8" stroke-width="1.5"/>
+              <line x1="370" y1="106" x2="370" y2="126" stroke="#94a3b8" stroke-width="1.5"/>
+
+              <!-- Isometric LED Fixture Housing -->
+              <polygon points="250,126 390,126 382,135 258,135" fill="#1e293b" stroke="#e879f9" stroke-width="1.5"/>
+              <!-- Glowing LED Strip -->
+              <line id="grow-light-bar" x1="260" y1="133" x2="380" y2="133" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
+            </g>
+
+            <!-- ==================== FRONT TRANSPARENT GLASS ROOF & RIBS ==================== -->
+            <g pointer-events="none">
+              <!-- Roof Ridge & Rafters -->
+              <line x1="320" y1="45" x2="320" y2="85" stroke="#34d399" stroke-opacity="0.45" stroke-width="2"/>
+              <line x1="320" y1="45" x2="130" y2="165" stroke="#34d399" stroke-opacity="0.45" stroke-width="2"/>
+              <line x1="320" y1="45" x2="510" y2="165" stroke="#34d399" stroke-opacity="0.45" stroke-width="2"/>
+              <line x1="320" y1="45" x2="320" y2="215" stroke="#34d399" stroke-opacity="0.25" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+              <!-- Front Corner Posts -->
+              <line x1="130" y1="165" x2="130" y2="330" stroke="#34d399" stroke-opacity="0.4" stroke-width="2"/>
+              <line x1="510" y1="165" x2="510" y2="330" stroke="#34d399" stroke-opacity="0.4" stroke-width="2"/>
+              <line x1="320" y1="215" x2="320" y2="422" stroke="#34d399" stroke-opacity="0.2" stroke-width="1.5"/>
+
+              <!-- High Humidity Condensation Droplets on Glass (Visible when Humidity > 75%) -->
+              <g id="glass-condensation" class="condensation-group" opacity="0" fill="#a5f3fc">
+                <circle cx="165" cy="210" r="2.2" fill-opacity="0.55"/>
+                <circle cx="178" cy="235" r="1.6" fill-opacity="0.45"/>
+                <circle cx="155" cy="255" r="2.5" fill-opacity="0.5"/>
+                <circle cx="185" cy="275" r="1.8" fill-opacity="0.4"/>
+                <circle cx="465" cy="205" r="2.2" fill-opacity="0.55"/>
+                <circle cx="482" cy="232" r="2.6" fill-opacity="0.45"/>
+                <circle cx="452" cy="250" r="1.7" fill-opacity="0.5"/>
+                <circle cx="475" cy="278" r="2.1" fill-opacity="0.45"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Bottom Legend / Quick Status Bar inside Viewport -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-3 pt-2 border-t border-white/10 text-xs">
+          <div class="glass-card-subtle rounded-xl p-2.5 flex items-center justify-between">
+            <span class="text-slate-400">Water Pump</span>
+            <span id="hud-pump-state" class="font-mono font-semibold text-slate-400">OFF</span>
+          </div>
+          <div class="glass-card-subtle rounded-xl p-2.5 flex items-center justify-between">
+            <span class="text-slate-400">Grow Light</span>
+            <span id="hud-light-state" class="font-mono font-semibold text-slate-400">OFF</span>
+          </div>
+          <div class="glass-card-subtle rounded-xl p-2.5 flex items-center justify-between">
+            <span class="text-slate-400">Exhaust Fan</span>
+            <span id="hud-fan-state" class="font-mono font-semibold text-slate-400">OFF</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Serial / BLE Live Telemetry Console -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col gap-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <h2 class="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-300">ESP32 BLE JSON Stream</h2>
+          </div>
+          <button id="btn-clear-log" type="button" class="text-xs text-slate-400 hover:text-white transition font-mono">Clear</button>
+        </div>
+        <div id="serial-console" class="bg-forest-950/90 border border-white/5 rounded-xl p-3 h-32 overflow-y-auto font-mono text-xs space-y-1 text-slate-300">
+          <div class="text-emerald-400/80">[SYS] BioSphere OS initialized. Ready for ESP32 BLE pairing or Simulation testing.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT CONTROL & TELEMETRY PANEL (5 Columns on Desktop) -->
+    <aside class="lg:col-span-5 flex flex-col gap-5">
+
+      <!-- 1. Live Sensor Telemetry Cards -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-emerald-300">Live Telemetry</h2>
+          <div class="flex items-center gap-1.5 text-xs font-mono">
+            <span class="text-slate-400">Health Index:</span>
+            <span id="health-score" class="font-bold text-emerald-400">94%</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+          <!-- Soil Moisture -->
+          <div class="glass-card-subtle rounded-xl p-3 flex flex-col gap-1.5">
+            <div class="flex items-center justify-between text-cyan-400">
+              <span class="text-[11px] font-medium uppercase tracking-wide text-slate-400">Soil</span>
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
+              </svg>
+            </div>
+            <div class="text-xl sm:text-2xl font-bold font-mono text-white"><span id="val-soil">52</span><span class="text-xs text-cyan-400 ml-0.5">%</span></div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div id="bar-soil" class="bg-cyan-400 h-full rounded-full transition-all duration-300" style="width: 52%"></div>
+            </div>
+          </div>
+
+          <!-- Humidity -->
+          <div class="glass-card-subtle rounded-xl p-3 flex flex-col gap-1.5">
+            <div class="flex items-center justify-between text-emerald-400">
+              <span class="text-[11px] font-medium uppercase tracking-wide text-slate-400">Humidity</span>
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a7 7 0 007-7c0-3.87-7-11-7-11S5 10.13 5 14a7 7 0 007 7z" />
+              </svg>
+            </div>
+            <div class="text-xl sm:text-2xl font-bold font-mono text-white"><span id="val-humidity">68</span><span class="text-xs text-emerald-400 ml-0.5">%</span></div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div id="bar-humidity" class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: 68%"></div>
+            </div>
+          </div>
+
+          <!-- Light Intensity -->
+          <div class="glass-card-subtle rounded-xl p-3 flex flex-col gap-1.5">
+            <div class="flex items-center justify-between text-amber-400">
+              <span class="text-[11px] font-medium uppercase tracking-wide text-slate-400">Light</span>
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div class="text-xl sm:text-2xl font-bold font-mono text-white"><span id="val-light">72</span><span class="text-xs text-amber-400 ml-0.5">%</span></div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div id="bar-light" class="bg-amber-400 h-full rounded-full transition-all duration-300" style="width: 72%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Sandbox Sliders (Active in Simulation Mode) -->
+        <div id="simulation-controls" class="pt-3 border-t border-white/10 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-amber-300 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              Virtual Sensor Sandbox (Drag to Test)
+            </span>
+            <span class="text-[11px] font-mono text-slate-400">Live Physics</span>
+          </div>
+
+          <div class="space-y-2.5 text-xs">
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="text-slate-300">Simulate Soil Moisture</span>
+                <span id="sim-soil-readout" class="font-mono text-cyan-300">52%</span>
+              </div>
+              <input id="sim-soil" type="range" min="0" max="100" value="52" class="w-full slider-cyan">
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="text-slate-300">Simulate Ambient Humidity</span>
+                <span id="sim-humidity-readout" class="font-mono text-emerald-300">68%</span>
+              </div>
+              <input id="sim-humidity" type="range" min="15" max="99" value="68" class="w-full">
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="text-slate-300">Simulate Ambient Sunlight</span>
+                <span id="sim-light-readout" class="font-mono text-amber-300">72%</span>
+              </div>
+              <input id="sim-light" type="range" min="0" max="100" value="72" class="w-full slider-amber">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Hardware Actuators & Overrides -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col gap-3.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-emerald-300">Actuators & Overrides</h2>
+          <span class="text-xs text-slate-400">Mode Selection</span>
+        </div>
+
+        <!-- Water Pump Control Row -->
+        <div class="glass-card-subtle rounded-xl p-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <div id="icon-bg-pump" class="w-9 h-9 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center transition">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a7 7 0 007-7c0-3.87-7-11-7-11S5 10.13 5 14a7 7 0 007 7z" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-white">Water Pump</div>
+              <div class="text-[11px] font-mono text-slate-400">Runtime: <span id="runtime-pump">0</span>s</div>
+            </div>
+          </div>
+          <div class="inline-flex rounded-lg bg-forest-950 p-1 border border-white/5 text-xs font-medium" data-actuator="pump">
+            <button type="button" onclick="setActuatorMode('pump', 'AUTO')" class="mode-btn px-2.5 py-1 rounded-md bg-emerald-500 text-forest-950 font-semibold transition" data-mode="AUTO">Auto</button>
+            <button type="button" onclick="setActuatorMode('pump', 'ON')" class="mode-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition" data-mode="ON">ON</button>
+            <button type="button" onclick="setActuatorMode('pump', 'OFF')" class="mode-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition" data-mode="OFF">OFF</button>
+          </div>
+        </div>
+
+        <!-- Grow Light Control Row -->
+        <div class="glass-card-subtle rounded-xl p-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <div id="icon-bg-light" class="w-9 h-9 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center transition">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-white">LED Grow Light</div>
+              <div class="text-[11px] font-mono text-slate-400">Runtime: <span id="runtime-light">0</span>s</div>
+            </div>
+          </div>
+          <div class="inline-flex rounded-lg bg-forest-950 p-1 border border-white/5 text-xs font-medium" data-actuator="light">
+            <button type="button" onclick="setActuatorMode('light', 'AUTO')" class="mode-btn px-2.5 py-1 rounded-md bg-emerald-500 text-forest-950 font-semibold transition" data-mode="AUTO">Auto</button>
+            <button type="button" onclick="setActuatorMode('light', 'ON')" class="mode-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition" data-mode="ON">ON</button>
+            <button type="button" onclick="setActuatorMode('light', 'OFF')" class="mode-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition" data-mode="OFF">OFF</button>
+          </div>
+        </div>
+
+        <!-- Exhaust Fan Control Row -->
+        <div class="glass-card-subtle rounded-xl p-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <div id="icon-bg-fan" class="w-9 h-9 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center transition">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-white">Exhaust Fan</div>
+              <div class="text-[11px] font-mono text-slate-400">Runtime: <span id="runtime-fan">0</span>s</div>
+            </div>
+          </div>
+          <div class="inline-flex rounded-lg bg-forest-950 p-1 border border-white/5 text-xs font-medium" data-actuator="fan">
+            <button type="button" onclick="setActuatorMode('fan', 'AUTO')" class="mode-btn px-2.5 py-1 rounded-md bg-emerald-500 text-forest-950 font-semibold transition" data-mode="AUTO">Auto</button>
+            <button type="button" onclick="setActuatorMode('fan', 'ON')" class="mode-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition" data-mode="ON">ON</button>
+            <button type="button" onclick="setActuatorMode('fan', 'OFF')" class="mode-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition" data-mode="OFF">OFF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Automation Rules Engine ("Auto-Pilot Brain") -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col gap-3.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-emerald-300">Auto-Pilot Brain</h2>
+          <span class="text-xs font-mono text-emerald-400/80">Closed-Loop Rules</span>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <!-- Rule 1: Soil -> Pump -->
+          <div class="glass-card-subtle rounded-xl p-3">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-slate-300">Activate <strong class="text-cyan-400">Pump</strong> if Soil Moisture &lt;</span>
+              <span id="thresh-soil-val" class="font-mono font-bold text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">60%</span>
+            </div>
+            <input id="thresh-soil" type="range" min="10" max="85" value="60" class="w-full slider-cyan">
+          </div>
+
+          <!-- Rule 2: Light -> Grow Light -->
+          <div class="glass-card-subtle rounded-xl p-3">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-slate-300">Activate <strong class="text-fuchsia-400">Grow Light</strong> if Light &lt;</span>
+              <span id="thresh-light-val" class="font-mono font-bold text-fuchsia-300 bg-fuchsia-500/10 px-2 py-0.5 rounded">45%</span>
+            </div>
+            <input id="thresh-light" type="range" min="10" max="90" value="45" class="w-full slider-magenta">
+          </div>
+
+          <!-- Rule 3: Humidity -> Fan -->
+          <div class="glass-card-subtle rounded-xl p-3">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-slate-300">Activate <strong class="text-emerald-400">Fan</strong> if Humidity &gt;</span>
+              <span id="thresh-humidity-val" class="font-mono font-bold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded">75%</span>
+            </div>
+            <input id="thresh-humidity" type="range" min="30" max="95" value="75" class="w-full">
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Application Logic: Web Bluetooth, Automation Engine & Isometric Digital Twin Sync -->
+  <script>
+    /**
+     * BioSphere OS Core Controller
+     * Handles Web Bluetooth (BLE) communication with ESP32, closed-loop automation rules,
+     * interactive SVG Digital Twin rendering, and local physics simulation.
+     */
+
+    // Custom BLE UUIDs matching standard ESP32 NimBLE / BLEServer UART-style service
+    const BLE_SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+    const BLE_RX_CHAR_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8'; // ESP32 -> Mobile (Notify)
+    const BLE_TX_CHAR_UUID = '1c95d5e3-d8f7-413a-bf3d-7a2e5d7be87e'; // Mobile -> ESP32 (Write)
+
+    // Application State
+    const state = {
+      isSimMode: true,
+      bleConnected: false,
+      bleDevice: null,
+      bleTxChar: null,
+      bleRxChar: null,
+
+      // Sensor Values (0-100%)
+      sensors: {
+        soil: 52,
+        humidity: 68,
+        light: 72
+      },
+
+      // Automation Thresholds
+      thresholds: {
+        soilMin: 60,     // Trigger Pump when soil < soilMin
+        lightMin: 45,    // Trigger Grow Light when light < lightMin
+        humidityMax: 75  // Trigger Fan when humidity > humidityMax
+      },
+
+      // Actuator Modes ('AUTO', 'ON', 'OFF') & Actual Output States (boolean)
+      modes: {
+        pump: 'AUTO',
+        light: 'AUTO',
+        fan: 'AUTO'
+      },
+      outputs: {
+        pump: false,
+        light: false,
+        fan: false
+      },
+      lastSentOutputs: {
+        pump: null,
+        light: null,
+        fan: null
+      },
+
+      // Cumulative Runtimes (seconds)
+      runtime: {
+        pump: 0,
+        light: 0,
+        fan: 0
+      }
+    };
+
+    // Plant Presets Dictionary
+    const PLANT_PROFILES = {
+      fern: { soilMin: 60, lightMin: 45, humidityMax: 75, name: 'Tropical Fern' },
+      tomato: { soilMin: 45, lightMin: 65, humidityMax: 70, name: 'Cherry Tomatoes' },
+      succulent: { soilMin: 20, lightMin: 55, humidityMax: 45, name: 'Desert Succulent' }
+    };
+
+    // ==================== UI NOTIFICATIONS & LOGGING ====================
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const styles = {
+        info: 'bg-forest-850/95 border-emerald-500/40 text-emerald-100',
+        warn: 'bg-amber-950/95 border-amber-500/40 text-amber-100',
+        error: 'bg-rose-950/95 border-rose-500/40 text-rose-100',
+        success: 'bg-emerald-950/95 border-emerald-400/50 text-emerald-100'
+      };
+
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl backdrop-blur-md text-xs sm:text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${styles[type] || styles.info}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3600);
+    }
+
+    function logConsole(msg, direction = 'SYS') {
+      const consoleEl = document.getElementById('serial-console');
+      const line = document.createElement('div');
+      const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      let colorClass = 'text-slate-300';
+      if (direction === 'TX') colorClass = 'text-cyan-400';
+      if (direction === 'RX') colorClass = 'text-emerald-400';
+      if (direction === 'ERR') colorClass = 'text-rose-400';
+
+      line.className = colorClass;
+      line.textContent = `[${time}] ${direction} ${direction !== 'SYS' ? (direction === 'TX' ? '->' : '<-') : '//'} ${msg}`;
+      consoleEl.appendChild(line);
+
+      // Keep last 60 lines
+      while (consoleEl.children.length > 60) {
+        consoleEl.removeChild(consoleEl.firstChild);
+      }
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    // ==================== WEB BLUETOOTH (ESP32 GATEWAY) ====================
+
+    async function connectESP32() {
+      if (!navigator.bluetooth) {
+        showToast('Web Bluetooth is not supported in this browser. Use Chrome on Android/Desktop or test in Simulation Mode.', 'warn');
+        logConsole('Web Bluetooth API unavailable in current browser environment.', 'ERR');
+        return;
+      }
+
+      if (state.bleConnected && state.bleDevice) {
+        state.bleDevice.gatt.disconnect();
+        return;
+      }
+
+      try {
+        logConsole('Scanning for ESP32 Greenhouse BLE peripheral...', 'SYS');
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ services: [BLE_SERVICE_UUID] }],
+          optionalServices: [BLE_SERVICE_UUID]
+        });
+
+        state.bleDevice = device;
+        device.addEventListener('gattserverdisconnected', onBLEDisconnected);
+
+        logConsole(`Connecting to ${device.name || 'ESP32_Greenhouse'}...`, 'SYS');
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+
+        // Setup RX Characteristic (Notifications from ESP32 sensors)
+        state.bleRxChar = await service.getCharacteristic(BLE_RX_CHAR_UUID);
+        await state.bleRxChar.startNotifications();
+        state.bleRxChar.addEventListener('characteristicvaluechanged', handleBLENotification);
+
+        // Setup TX Characteristic (Commands to ESP32 relays)
+        state.bleTxChar = await service.getCharacteristic(BLE_TX_CHAR_UUID);
+
+        state.bleConnected = true;
+        state.isSimMode = false;
+        updateConnectionUI();
+        showToast(`Connected to ${device.name || 'ESP32'} via Bluetooth!`, 'success');
+        logConsole('BLE GATT link established. Streaming live telemetry.', 'SYS');
+
+        // Force initial state sync to ESP32
+        state.lastSentOutputs = { pump: null, light: null, fan: null };
+        evaluateAutomationAndRender();
+
+      } catch (err) {
+        if (err.name !== 'NotFoundError') {
+          showToast(`BLE Error: ${err.message}`, 'error');
+          logConsole(`Connection failed: ${err.message}`, 'ERR');
+        } else {
+          logConsole('BLE device selection cancelled by user.', 'SYS');
+        }
+      }
+    }
+
+    function onBLEDisconnected() {
+      state.bleConnected = false;
+      state.bleTxChar = null;
+      state.bleRxChar = null;
+      state.isSimMode = true;
+      updateConnectionUI();
+      showToast('ESP32 disconnected. Switched back to Simulation Mode.', 'warn');
+      logConsole('BLE peripheral disconnected.', 'ERR');
+    }
+
+    function handleBLENotification(event) {
+      try {
+        const decoder = new TextDecoder('utf-8');
+        const rawStr = decoder.decode(event.target.value).trim();
+        logConsole(rawStr, 'RX');
+
+        const data = JSON.parse(rawStr);
+        if (typeof data.soil === 'number') state.sensors.soil = Math.min(100, Math.max(0, Math.round(data.soil)));
+        if (typeof data.hum === 'number') state.sensors.humidity = Math.min(100, Math.max(0, Math.round(data.hum)));
+        if (typeof data.lux === 'number') state.sensors.light = Math.min(100, Math.max(0, Math.round(data.lux)));
+
+        evaluateAutomationAndRender();
+      } catch (e) {
+        logConsole(`Malformed JSON packet from ESP32: ${e.message}`, 'ERR');
+      }
+    }
+
+    async function sendBLECommand(outputs) {
+      const payloadObj = {
+        pump: outputs.pump ? 1 : 0,
+        light: outputs.light ? 1 : 0,
+        fan: outputs.fan ? 1 : 0
+      };
+      const jsonStr = JSON.stringify(payloadObj);
+
+      // Only transmit when state changes to conserve BLE bandwidth
+      if (
+        state.lastSentOutputs.pump === outputs.pump &&
+        state.lastSentOutputs.light === outputs.light &&
+        state.lastSentOutputs.fan === outputs.fan
+      ) {
+        return;
+      }
+
+      state.lastSentOutputs = { ...outputs };
+      logConsole(jsonStr, 'TX');
+
+      if (state.bleConnected && state.bleTxChar) {
+        try {
+          const encoder = new TextEncoder();
+          await state.bleTxChar.writeValue(encoder.encode(jsonStr + '\n'));
+        } catch (err) {
+          logConsole(`BLE Write failed: ${err.message}`, 'ERR');
+        }
+      }
+    }
+
+    // ==================== AUTOMATION ENGINE & DIGITAL TWIN RENDERER ====================
+
+    function evaluateAutomationAndRender() {
+      const { soil, humidity, light } = state.sensors;
+      const { soilMin, lightMin, humidityMax } = state.thresholds;
+
+      // 1. Compute Desired Actuator States (Auto vs Manual Override)
+      const nextPump = state.modes.pump === 'AUTO' ? (soil < soilMin) : (state.modes.pump === 'ON');
+      const nextLight = state.modes.light === 'AUTO' ? (light < lightMin) : (state.modes.light === 'ON');
+      const nextFan = state.modes.fan === 'AUTO' ? (humidity > humidityMax) : (state.modes.fan === 'ON');
+
+      state.outputs.pump = nextPump;
+      state.outputs.light = nextLight;
+      state.outputs.fan = nextFan;
+
+      // Transmit command packet if changed
+      sendBLECommand(state.outputs);
+
+      // 2. Update Telemetry Bars & Numeric Readouts
+      document.getElementById('val-soil').textContent = soil;
+      document.getElementById('bar-soil').style.width = `${soil}%`;
+
+      document.getElementById('val-humidity').textContent = humidity;
+      document.getElementById('bar-humidity').style.width = `${humidity}%`;
+
+      document.getElementById('val-light').textContent = light;
+      document.getElementById('bar-light').style.width = `${light}%`;
+
+      // Sync simulation sliders if updated externally
+      document.getElementById('sim-soil').value = soil;
+      document.getElementById('sim-soil-readout').textContent = `${soil}%`;
+      document.getElementById('sim-humidity').value = humidity;
+      document.getElementById('sim-humidity-readout').textContent = `${humidity}%`;
+      document.getElementById('sim-light').value = light;
+      document.getElementById('sim-light-readout').textContent = `${light}%`;
+
+      // 3. Calculate Botanical VPD (Vapor Pressure Deficit) & Plant Health Score
+      const estTempC = 24.5; // Nominal ambient greenhouse temp
+      const svp = 0.61078 * Math.exp((17.27 * estTempC) / (estTempC + 237.3));
+      const vpd = +(svp * (1 - humidity / 100)).toFixed(2);
+      const vpdLabel = vpd < 0.4 ? 'Too Humid' : (vpd <= 1.35 ? 'Optimal' : 'High Transpiration');
+      document.getElementById('vpd-badge').textContent = `VPD: ${vpd} kPa (${vpdLabel})`;
+
+      // Health score penalizes deviations from ideal thresholds
+      const soilPenalty = Math.max(0, soilMin - soil) * 0.9;
+      const lightPenalty = (!nextLight && light < lightMin) ? (lightMin - light) * 0.6 : 0;
+      const humPenalty = Math.max(0, humidity - humidityMax) * 0.7;
+      const health = Math.max(12, Math.min(100, Math.round(100 - soilPenalty - lightPenalty - humPenalty)));
+      const healthEl = document.getElementById('health-score');
+      healthEl.textContent = `${health}%`;
+      healthEl.className = `font-bold ${health >= 75 ? 'text-emerald-400' : (health >= 45 ? 'text-amber-400' : 'text-rose-400')}`;
+
+      // 4. Update Actuator HUD Badges & Icon Highlights
+      updateActuatorStatusUI('pump', nextPump, 'text-cyan-400', 'bg-cyan-500/20 text-cyan-300');
+      updateActuatorStatusUI('light', nextLight, 'text-fuchsia-400', 'bg-fuchsia-500/20 text-fuchsia-300');
+      updateActuatorStatusUI('fan', nextFan, 'text-emerald-400', 'bg-emerald-500/20 text-emerald-300');
+
+      // 5. Render Isometric SVG Digital Twin Effects
+      renderIsometricGreenhouse(soil, humidity, light, nextPump, nextLight, nextFan);
+    }
+
+    function updateActuatorStatusUI(key, isOn, textColor, activeIconClasses) {
+      const hudEl = document.getElementById(`hud-${key}-state`);
+      const iconBg = document.getElementById(`icon-bg-${key}`);
+      const mode = state.modes[key];
+
+      hudEl.textContent = isOn ? `ON (${mode})` : `OFF (${mode})`;
+      hudEl.className = `font-mono font-semibold ${isOn ? textColor : 'text-slate-500'}`;
+
+      iconBg.className = `w-9 h-9 rounded-lg flex items-center justify-center transition ${
+        isOn ? activeIconClasses : 'bg-slate-800 text-slate-400'
+      }`;
+    }
+
+    function renderIsometricGreenhouse(soil, humidity, light, pumpOn, lightOn, fanOn) {
+      // A. Grow Light Cone & LED Bar
+      const lightCone = document.getElementById('grow-light-cone');
+      const lightBar = document.getElementById('grow-light-bar');
+      if (lightOn) {
+        lightCone.setAttribute('opacity', '1');
+        lightCone.classList.add('grow-cone-active');
+        lightBar.setAttribute('stroke', '#f0abfc');
+      } else {
+        lightCone.setAttribute('opacity', '0');
+        lightCone.classList.remove('grow-cone-active');
+        lightBar.setAttribute('stroke', '#64748b');
+      }
+
+      // B. Natural Sunlight Rays opacity based on ambient light sensor
+      const sunRays = document.getElementById('sunlight-rays');
+      sunRays.setAttribute('opacity', (light / 100) * 0.75);
+
+      // C. Exhaust Fan Rotation & Airflow Lines
+      const fanBlades = document.getElementById('fan-blades-group');
+      const fanAirflow = document.getElementById('fan-airflow');
+      if (fanOn) {
+        fanBlades.classList.remove('fan-blades-idle');
+        fanBlades.classList.add('fan-blades-active');
+        fanAirflow.setAttribute('opacity', '1');
+      } else {
+        fanBlades.classList.remove('fan-blades-active');
+        fanBlades.classList.add('fan-blades-idle');
+        fanAirflow.setAttribute('opacity', '0');
+      }
+
+      // D. Water Pump Spray & Status LED
+      const waterSpray = document.getElementById('water-spray-group');
+      const pumpLed = document.getElementById('pump-status-led');
+      if (pumpOn) {
+        waterSpray.setAttribute('opacity', '1');
+        pumpLed.setAttribute('fill', '#22d3ee');
+      } else {
+        waterSpray.setAttribute('opacity', '0');
+        pumpLed.setAttribute('fill', '#475569');
+      }
+
+      // E. Soil Color, Dry Cracks, and Moisture Sheen
+      const soilSurface = document.getElementById('soil-surface');
+      const soilCracks = document.getElementById('soil-cracks');
+      const soilSheen = document.getElementById('soil-moisture-sheen');
+
+      if (soil < 30) {
+        soilSurface.setAttribute('fill', '#7c5e48'); // Dry sandy brown
+        soilCracks.setAttribute('opacity', '0.85');
+        soilSheen.setAttribute('opacity', '0');
+      } else if (soil < 65) {
+        soilSurface.setAttribute('fill', '#4e3629'); // Healthy loam
+        soilCracks.setAttribute('opacity', '0');
+        soilSheen.setAttribute('opacity', '0.25');
+      } else {
+        soilSurface.setAttribute('fill', '#2e1f18'); // Rich dark hydrated soil
+        soilCracks.setAttribute('opacity', '0');
+        soilSheen.setAttribute('opacity', '0.75');
+      }
+
+      // F. Glass Condensation when Humidity > 75%
+      const condensation = document.getElementById('glass-condensation');
+      condensation.setAttribute('opacity', humidity > 75 ? Math.min(1, (humidity - 75) / 20) : '0');
+
+      // G. Plant Leaf Droop vs Perky Posture based on Soil Moisture
+      const droopAngle = soil < 30 ? ((30 - soil) / 30) * 16 : 0; // Up to 16 deg droop when parched
+      document.getElementById('leaf-left-low').style.transform = `rotate(${-droopAngle}deg)`;
+      document.getElementById('leaf-right-low').style.transform = `rotate(${droopAngle}deg)`;
+      document.getElementById('leaf-left-high').style.transform = `rotate(${-droopAngle * 0.7}deg)`;
+      document.getElementById('leaf-right-high').style.transform = `rotate(${droopAngle * 0.7}deg)`;
+    }
+
+    // ==================== USER INTERACTIONS & EVENT LISTENERS ====================
+
+    function setActuatorMode(actuator, mode) {
+      state.modes[actuator] = mode;
+
+      // Update Segmented Control Button Styles
+      const group = document.querySelector(`[data-actuator="${actuator}"]`);
+      group.querySelectorAll('.mode-btn').forEach(btn => {
+        const isSelected = btn.dataset.mode === mode;
+        if (isSelected) {
+          btn.className = 'mode-btn px-2.5 py-1 rounded-md bg-emerald-500 text-forest-950 font-semibold transition';
+        } else {
+          btn.className = 'mode-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition';
+        }
+      });
+
+      evaluateAutomationAndRender();
+    }
+
+    // Clicking hardware inside the Isometric SVG cycles between Manual ON and Manual OFF (or back to Auto)
+    window.toggleManualActuator = function(actuator) {
+      const nextMode = state.outputs[actuator] ? 'OFF' : 'ON';
+      setActuatorMode(actuator, nextMode);
+      showToast(`${actuator.toUpperCase()} manually switched ${nextMode}`, 'info');
+    };
+
+    function updateConnectionUI() {
+      const badge = document.getElementById('connection-badge');
+      const dot = document.getElementById('connection-dot');
+      const text = document.getElementById('connection-text');
+      const bleBtnText = document.getElementById('ble-btn-text');
+      const simControls = document.getElementById('simulation-controls');
+      const simBtnLabel = document.getElementById('sim-btn-label');
+
+      if (state.bleConnected) {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+        text.textContent = 'ESP32 BLE CONNECTED';
+        bleBtnText.textContent = 'Disconnect BLE';
+        simControls.classList.add('opacity-50', 'pointer-events-none');
+        simBtnLabel.textContent = 'Live Hardware';
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        text.textContent = 'SIMULATION MODE';
+        bleBtnText.textContent = 'Connect ESP32 (BLE)';
+        simControls.classList.remove('opacity-50', 'pointer-events-none');
+        simBtnLabel.textContent = 'Sim Active';
+      }
+    }
+
+    // Bind UI Controls on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      // BLE Connect Button
+      document.getElementById('btn-ble-connect').addEventListener('click', connectESP32);
+
+      // Toggle Simulation Mode Button
+      document.getElementById('btn-toggle-sim').addEventListener('click', () => {
+        if (state.bleConnected) {
+          showToast('Disconnect ESP32 BLE first to use manual simulation sliders.', 'warn');
+          return;
+        }
+        showToast('Simulation Sandbox is active — drag sliders to test automation!', 'info');
+      });
+
+      // Plant Profile Dropdown
+      document.getElementById('plant-profile').addEventListener('change', (e) => {
+        const preset = PLANT_PROFILES[e.target.value];
+        if (!preset) return;
+
+        state.thresholds.soilMin = preset.soilMin;
+        state.thresholds.lightMin = preset.lightMin;
+        state.thresholds.humidityMax = preset.humidityMax;
+
+        document.getElementById('thresh-soil').value = preset.soilMin;
+        document.getElementById('thresh-soil-val').textContent = `${preset.soilMin}%`;
+
+        document.getElementById('thresh-light').value = preset.lightMin;
+        document.getElementById('thresh-light-val').textContent = `${preset.lightMin}%`;
+
+        document.getElementById('thresh-humidity').value = preset.humidityMax;
+        document.getElementById('thresh-humidity-val').textContent = `${preset.humidityMax}%`;
+
+        showToast(`Loaded "${preset.name}" thresholds`, 'success');
+        logConsole(`Applied profile: ${preset.name} (Soil>${preset.soilMin}%, Light>${preset.lightMin}%, Hum<${preset.humidityMax}%)`, 'SYS');
+        evaluateAutomationAndRender();
+      });
+
+      // Simulation Sliders
+      document.getElementById('sim-soil').addEventListener('input', (e) => {
+        state.sensors.soil = parseInt(e.target.value, 10);
+        evaluateAutomationAndRender();
+      });
+
+      document.getElementById('sim-humidity').addEventListener('input', (e) => {
+        state.sensors.humidity = parseInt(e.target.value, 10);
+        evaluateAutomationAndRender();
+      });
+
+      document.getElementById('sim-light').addEventListener('input', (e) => {
+        state.sensors.light = parseInt(e.target.value, 10);
+        evaluateAutomationAndRender();
+      });
+
+      // Threshold Rule Sliders
+      document.getElementById('thresh-soil').addEventListener('input', (e) => {
+        state.thresholds.soilMin = parseInt(e.target.value, 10);
+        document.getElementById('thresh-soil-val').textContent = `${state.thresholds.soilMin}%`;
+        document.getElementById('plant-profile').value = 'custom';
+        evaluateAutomationAndRender();
+      });
+
+      document.getElementById('thresh-light').addEventListener('input', (e) => {
+        state.thresholds.lightMin = parseInt(e.target.value, 10);
+        document.getElementById('thresh-light-val').textContent = `${state.thresholds.lightMin}%`;
+        document.getElementById('plant-profile').value = 'custom';
+        evaluateAutomationAndRender();
+      });
+
+      document.getElementById('thresh-humidity').addEventListener('input', (e) => {
+        state.thresholds.humidityMax = parseInt(e.target.value, 10);
+        document.getElementById('thresh-humidity-val').textContent = `${state.thresholds.humidityMax}%`;
+        document.getElementById('plant-profile').value = 'custom';
+        evaluateAutomationAndRender();
+      });
+
+      // Clear Console Button
+      document.getElementById('btn-clear-log').addEventListener('click', () => {
+        document.getElementById('serial-console').innerHTML = '';
+        logConsole('Console cleared.', 'SYS');
+      });
+
+      // 1-Second Heartbeat Loop: Tracks actuator runtime & subtle environmental physics in Sim Mode
+      setInterval(() => {
+        let changed = false;
+
+        // Increment runtime counters for active hardware
+        if (state.outputs.pump) {
+          state.runtime.pump += 1;
+          document.getElementById('runtime-pump').textContent = state.runtime.pump;
+          // In Simulation Mode, running the pump gradually hydrates the soil!
+          if (state.isSimMode && state.sensors.soil < 95) {
+            state.sensors.soil = Math.min(100, state.sensors.soil + 2);
+            changed = true;
+          }
+        }
+
+        if (state.outputs.light) {
+          state.runtime.light += 1;
+          document.getElementById('runtime-light').textContent = state.runtime.light;
+        }
+
+        if (state.outputs.fan) {
+          state.runtime.fan += 1;
+          document.getElementById('runtime-fan').textContent = state.runtime.fan;
+          // In Simulation Mode, running the exhaust fan gradually lowers excess humidity!
+          if (state.isSimMode && state.sensors.humidity > 35) {
+            state.sensors.humidity = Math.max(20, state.sensors.humidity - 1);
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          evaluateAutomationAndRender();
+        }
+      }, 1000);
+
+      // Initial render
+      evaluateAutomationAndRender();
+    });
+  </script>
+</body>
+</html>
